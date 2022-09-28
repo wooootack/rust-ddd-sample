@@ -7,7 +7,10 @@ use crate::modules::user::domain::{user::User as DomainUser, users_repository::U
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
 
-#[derive(Queryable)]
+use crate::schema::users;
+
+#[derive(Queryable, Insertable)]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: String,
     pub first_name: String,
@@ -69,15 +72,46 @@ impl UsersRepository for PostgresUsersRepository<'_> {
         Ok(domain_user)
     }
 
-    fn register(self, user: &DomainUser) {
-        todo!()
+    fn register(self, user: &DomainUser) -> Result<DomainUser, RepositoryError> {
+        let conn = self.connection;
+
+        let new_user = User {
+            id: user.id.value.clone(),
+            first_name: user.name.first_name.clone(),
+            last_name: user.name.last_name.clone(),
+            age: user.age,
+        };
+
+        diesel::insert_into(users::table)
+            .values(&new_user)
+            .execute(conn)
+            .expect("Error saving new user");
+
+        Ok(user.clone())
     }
 
-    fn update(self, user: &DomainUser) {
-        todo!()
+    fn update(self, user: &DomainUser) -> Result<DomainUser, RepositoryError> {
+        let conn = self.connection;
+
+        diesel::update(users.find(user.id.value.clone()))
+            .set((
+                first_name.eq(user.name.first_name.clone()),
+                last_name.eq(user.name.last_name.clone()),
+                age.eq(user.age),
+            ))
+            .execute(conn)
+            .expect("Error updating user");
+
+        Ok(user.clone())
     }
 
-    fn delete(self, user: &DomainUser) {
-        todo!()
+    fn delete(self, user: &DomainUser) -> Result<i16, RepositoryError> {
+        let conn = self.connection;
+
+        let num_deleted = diesel::delete(users.find(user.id.value.clone()))
+            .execute(conn)
+            .expect("Error deleting user");
+
+        Ok(num_deleted as i16)
     }
 }

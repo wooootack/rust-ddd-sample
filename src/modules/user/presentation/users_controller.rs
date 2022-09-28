@@ -1,6 +1,5 @@
-use actix_web::{
-    error::ErrorInternalServerError, get, http::Error, post, web, HttpResponse, Responder,
-};
+use actix_web::{get, http::Error, post, web, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     modules::user::{
@@ -14,6 +13,14 @@ use crate::{
     },
     DbPool,
 };
+
+#[derive(Serialize, Deserialize)]
+
+pub struct CreateUserRequest {
+    pub first_name: String,
+    pub last_name: String,
+    pub age: i16,
+}
 
 #[get("/users")]
 pub async fn get_all_users(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
@@ -61,19 +68,29 @@ pub async fn get_user_by_id(
 }
 
 #[post("/users")]
-pub async fn create_user() -> impl Responder {
-    let usecase = CreateUserUseCase::new(MockUsersRepository {});
-
+pub async fn create_user(
+    pool: web::Data<DbPool>,
+    request: web::Json<CreateUserRequest>,
+) -> Result<HttpResponse, Error> {
     let param = CreateUserParameter {
-        first_name: "John".to_string(),
-        last_name: "Doe".to_string(),
-        age: 30,
+        first_name: request.first_name.to_string(),
+        last_name: request.last_name.to_string(),
+        age: request.age,
     };
 
-    let res = usecase.execute(param);
+    let response = web::block(move || {
+        let mut conn = pool.get()?;
+        let usecase = CreateUserUseCase::new(PostgresUsersRepository::new(&mut conn));
+        usecase.execute(param)
+    })
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError);
 
-    HttpResponse::Ok().body(format!(
-        "user_id: {}, user_name: {}, age:  {}",
-        res.user_id, res.user_name, res.age
-    ))
+    match response {
+        Ok(response) => match response {
+            Ok(response) => Ok(HttpResponse::Ok().json(response.user)),
+            Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
+        },
+        Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
+    }
 }

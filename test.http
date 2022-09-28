@@ -1,0 +1,16 @@
+http://localhost:8080/users
+
+###
+
+http://localhost:8080/users/01GE1B30VJSRQCKBBB7HE7FBE5
+
+###
+
+POST http://localhost:8080/users
+content-type: application/json
+
+{
+  "first_name": "kyosuke",
+  "last_name": "awata",
+  "age": 25
+}

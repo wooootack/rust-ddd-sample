@@ -9,11 +9,11 @@ pub trait UsersRepository {
 
     fn find_by_id(self, id: &str) -> Result<Option<User>, RepositoryError>;
 
-    fn register(self, user: &User);
+    fn register(self, user: &User) -> Result<User, RepositoryError>;
 
-    fn update(self, user: &User);
+    fn update(self, user: &User) -> Result<User, RepositoryError>;
 
-    fn delete(self, user: &User);
+    fn delete(self, user: &User) -> Result<i16, RepositoryError>;
 }
 
 pub struct MockUsersRepository {}
@@ -37,9 +37,23 @@ impl UsersRepository for MockUsersRepository {
         Ok(Some(User::new(id, name, age)))
     }
 
-    fn register(self, _user: &User) {}
+    fn register(self, _user: &User) -> Result<User, RepositoryError> {
+        let id = UserId::default();
+        let name = UserName::new("John".to_string(), "Doe".to_string());
+        let age = 30;
 
-    fn update(self, _user: &User) {}
+        Ok(User::new(id, name, age))
+    }
 
-    fn delete(self, _user: &User) {}
+    fn update(self, _user: &User) -> Result<User, RepositoryError> {
+        let id = UserId::default();
+        let name = UserName::new("John".to_string(), "Doe".to_string());
+        let age = 30;
+
+        Ok(User::new(id, name, age))
+    }
+
+    fn delete(self, _user: &User) -> Result<i16, RepositoryError> {
+        Ok(1)
+    }
 }
