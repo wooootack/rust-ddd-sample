@@ -1,0 +1,9 @@
+http://localhost:8080/users
+
+###
+
+http://localhost:8080/users/01GE1B30VJSRQCKBBB7HE7FBE5
+
+###
+
+GET http://localhost:8080/status

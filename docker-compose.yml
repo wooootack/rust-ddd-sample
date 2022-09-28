@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: rust-ddd-sample-postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - rust-ddd-sample-postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rust-ddd-sample
+      TZ: "Asia/Tokyo"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d agaroot_academy_for_biz -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  postgres_test:
+    image: postgres:latest
+    container_name: rust-ddd-sample-postgres-test
+    ports:
+      - 5433:5432
+    volumes:
+      - rust-ddd-sample-postgres-test-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rust-ddd-sample
+      TZ: "Asia/Tokyo"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d agaroot_academy_for_biz -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  back-end:
+    build:
+      context: .
+      target: development
+    ports:
+      - 8080:8080
+    volumes:
+      - .:/app
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    environment:
+      TZ: "Asia/Tokyo"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres_test:
+        condition: service_healthy
+    healthcheck:
+      test: "curl -f http://localhost:8080/status || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    command: /bin/sh -c "cargo watch -x fmt -x 'run --bin api'"
+volumes:
+  cargo_cache:
+  target_cache:
+  rust-ddd-sample-postgres-data:
+  rust-ddd-sample-postgres-test-data:

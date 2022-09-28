@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -u
+
+ENGINE="postgres"
+USER="root"
+PASSWORD="password"
+HOST="postgres"
+HOST_TEST="postgres_test"
+PORT="5432"
+DB_NAME="rust-ddd-sample"
+
+POSTGRES_URL="${ENGINE}://${USER}:${PASSWORD}@${HOST}:${PORT}/${DB_NAME}"
+POSTGRES_TEST_URL="${ENGINE}://${USER}:${PASSWORD}@${HOST_TEST}:${PORT}/${DB_NAME}"
+
+# MEMO: 変数の設定が終わってから実行する
+set -ex
+
+# MEMO: ${@:2} -> 2つ目以降の引数を全て展開する
+case ${1} in
+  "test:all")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_URL back-end /bin/sh -c "cargo test --all"
+  ;;
+  "test:integration")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_TEST_URL back-end /bin/sh -c "diesel migration run && cargo test --all --features integration_test"
+  ;;
+  "db:dev:migration")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_URL back-end /bin/sh -c "diesel migration ${@:2}"
+  ;;
+  "db:test:migration")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_TEST_URL back-end /bin/sh -c "diesel migration ${@:2}"
+  ;;
+  "db:dev:seed")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_URL back-end /bin/sh -c "cargo run --bin seed dev"
+  ;;
+  "db:test:seed")
+    docker-compose up -d
+    docker-compose exec -e DATABASE_URL=$POSTGRES_TEST_URL back-end /bin/sh -c "cargo run --bin seed test"
+  ;;
+esac
+
