@@ -7,7 +7,7 @@ pub type RepositoryError = Box<dyn std::error::Error + Send + Sync>;
 pub trait UsersRepository {
     fn find_all(self) -> Result<Vec<User>, RepositoryError>;
 
-    fn find_by_id(self, id: &str) -> Option<User>;
+    fn find_by_id(self, id: &str) -> Result<Option<User>, RepositoryError>;
 
     fn register(self, user: &User);
 
@@ -29,12 +29,12 @@ impl UsersRepository for MockUsersRepository {
         Ok(results)
     }
 
-    fn find_by_id(self, _id: &str) -> Option<User> {
+    fn find_by_id(self, _id: &str) -> Result<Option<User>, RepositoryError> {
         let id = UserId::default();
         let name = UserName::new("John".to_string(), "Doe".to_string());
         let age = 30;
 
-        Some(User::new(id, name, age))
+        Ok(Some(User::new(id, name, age)))
     }
 
     fn register(self, _user: &User) {}

@@ -45,7 +45,7 @@ impl UsersRepository for PostgresUsersRepository<'_> {
         Ok(domain_users)
     }
 
-    fn find_by_id(self, user_id: &str) -> Option<DomainUser> {
+    fn find_by_id(self, user_id: &str) -> Result<Option<DomainUser>, RepositoryError> {
         let conn = self.connection;
 
         let results = users
@@ -53,7 +53,7 @@ impl UsersRepository for PostgresUsersRepository<'_> {
             .load::<User>(conn)
             .expect("Error loading users");
 
-        results
+        let domain_user = results
             .iter()
             .map(|user| {
                 let user_id = UserId::default();
@@ -64,7 +64,9 @@ impl UsersRepository for PostgresUsersRepository<'_> {
             })
             .collect::<Vec<DomainUser>>()
             .first()
-            .cloned()
+            .cloned();
+
+        Ok(domain_user)
     }
 
     fn register(self, user: &DomainUser) {

@@ -22,6 +22,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             .service(users_controller::get_all_users)
+            .service(users_controller::get_user_by_id)
             .service(users_controller::create_user)
     })
     .bind(("127.0.0.1", 8080))?

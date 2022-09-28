@@ -1,4 +1,6 @@
-use actix_web::{get, http::Error, post, web, HttpResponse, Responder};
+use actix_web::{
+    error::ErrorInternalServerError, get, http::Error, post, web, HttpResponse, Responder,
+};
 
 use crate::{
     modules::user::{
@@ -7,6 +9,7 @@ use crate::{
         usecase::{
             create_user::{CreateUserParameter, CreateUserUseCase},
             find_all_users::FindAllUsersUsecase,
+            find_user_by_id::{FindUserByIdRequest, FindUserByIdUsecase},
         },
     },
     DbPool,
@@ -28,6 +31,32 @@ pub async fn get_all_users(pool: web::Data<DbPool>) -> Result<HttpResponse, Erro
             Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
         },
         Err(e) => Ok(HttpResponse::InternalServerError().json(e.to_string())),
+    }
+}
+
+#[get("/users/{user_id}")]
+pub async fn get_user_by_id(
+    pool: web::Data<DbPool>,
+    user_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    let param = FindUserByIdRequest {
+        id: user_id.to_string(),
+    };
+
+    let response = web::block(move || {
+        let mut conn = pool.get()?;
+        let usecase = FindUserByIdUsecase::new(PostgresUsersRepository::new(&mut conn));
+        usecase.execute(param)
+    })
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError);
+
+    match response {
+        Ok(response) => match response {
+            Ok(response) => Ok(HttpResponse::Ok().json(response.user)),
+            Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
+        },
+        Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
     }
 }
 
