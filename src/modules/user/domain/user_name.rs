@@ -1,4 +1,6 @@
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+use serde::Serialize;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub struct UserName {
     first_name: String,
     last_name: String,

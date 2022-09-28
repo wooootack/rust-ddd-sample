@@ -1,6 +1,7 @@
 use super::{user_id::UserId, user_name::UserName};
+use serde::Serialize;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct User {
     pub id: UserId,
     pub name: UserName,
@@ -25,6 +26,6 @@ mod tests {
             30,
         );
 
-        assert!(!user.id.value.to_string().is_empty());
+        assert!(!user.id.value.is_empty());
     }
 }

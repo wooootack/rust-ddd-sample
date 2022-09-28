@@ -2,6 +2,7 @@ use diesel::PgConnection;
 
 use crate::modules::user::domain::user_id::UserId;
 use crate::modules::user::domain::user_name::UserName;
+use crate::modules::user::domain::users_repository::RepositoryError;
 use crate::modules::user::domain::{user::User as DomainUser, users_repository::UsersRepository};
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
@@ -14,40 +15,42 @@ pub struct User {
     pub age: i16,
 }
 
-pub struct PostgresUsersRepository {
-    connection: PgConnection,
+pub struct PostgresUsersRepository<'a> {
+    connection: &'a mut PgConnection,
 }
 
-impl PostgresUsersRepository {
-    pub fn new(connection: PgConnection) -> Self {
+impl<'a> PostgresUsersRepository<'a> {
+    pub fn new(connection: &'a mut PgConnection) -> Self {
         PostgresUsersRepository { connection }
     }
 }
 
-impl UsersRepository for PostgresUsersRepository {
-    fn find_all(self) -> Vec<DomainUser> {
-        let mut conn = self.connection;
+impl UsersRepository for PostgresUsersRepository<'_> {
+    fn find_all(self) -> Result<Vec<DomainUser>, RepositoryError> {
+        let conn = self.connection;
 
-        let results = users.load::<User>(&mut conn).expect("Error loading users");
+        let results = users.load::<User>(conn).expect("Error loading users");
 
-        results
+        let domain_users: Vec<DomainUser> = results
             .iter()
             .map(|user| {
-                let user_id = UserId::default();
+                let user_id = UserId::restore(&user.id.to_string());
                 let user_name =
                     UserName::new(user.first_name.to_string(), user.last_name.to_string());
 
                 DomainUser::new(user_id, user_name, user.age)
             })
-            .collect()
+            .collect();
+
+        Ok(domain_users)
     }
 
     fn find_by_id(self, user_id: &str) -> Option<DomainUser> {
-        let mut conn = self.connection;
+        let conn = self.connection;
 
         let results = users
             .filter(id.eq(user_id))
-            .load::<User>(&mut conn)
+            .load::<User>(conn)
             .expect("Error loading users");
 
         results

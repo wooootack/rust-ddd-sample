@@ -8,7 +8,11 @@ use std::env;
 use diesel::prelude::*;
 use diesel::PgConnection;
 
+use diesel::r2d2;
+use diesel::r2d2::ConnectionManager;
 use dotenvy::dotenv;
+
+pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();

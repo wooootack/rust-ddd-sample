@@ -1,13 +1,34 @@
-use actix_web::{get, post, HttpResponse, Responder};
+use actix_web::{get, http::Error, post, web, HttpResponse, Responder};
 
-use crate::modules::user::{
-    domain::users_repository::MockUsersRepository,
-    usecase::create_user::{CreateUserParameter, CreateUserUseCase},
+use crate::{
+    modules::user::{
+        domain::users_repository::MockUsersRepository,
+        infrastructure::postgres_users_repository::PostgresUsersRepository,
+        usecase::{
+            create_user::{CreateUserParameter, CreateUserUseCase},
+            find_all_users::FindAllUsersUsecase,
+        },
+    },
+    DbPool,
 };
 
 #[get("/users")]
-pub async fn get_all_users() -> impl Responder {
-    HttpResponse::Ok().body("Get All Users.")
+pub async fn get_all_users(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+    let response = web::block(move || {
+        let mut conn = pool.get()?;
+        let usecase = FindAllUsersUsecase::new(PostgresUsersRepository::new(&mut conn));
+        usecase.execute()
+    })
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError);
+
+    match response {
+        Ok(response) => match response {
+            Ok(response) => Ok(HttpResponse::Ok().json(response.users)),
+            Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
+        },
+        Err(e) => Ok(HttpResponse::InternalServerError().json(e.to_string())),
+    }
 }
 
 #[post("/users")]
