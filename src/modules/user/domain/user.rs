@@ -1,13 +1,14 @@
 use super::{user_id::UserId, user_name::UserName};
 
+#[derive(Clone)]
 pub struct User {
     pub id: UserId,
     pub name: UserName,
-    pub age: u8,
+    pub age: i16,
 }
 
 impl User {
-    pub fn new(id: UserId, name: UserName, age: u8) -> Self {
+    pub fn new(id: UserId, name: UserName, age: i16) -> Self {
         Self { id, name, age }
     }
 }

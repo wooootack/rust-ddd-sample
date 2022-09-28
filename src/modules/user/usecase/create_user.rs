@@ -5,13 +5,13 @@ use crate::modules::user::domain::{
 pub struct CreateUserParameter {
     pub first_name: String,
     pub last_name: String,
-    pub age: u8,
+    pub age: i16,
 }
 
 pub struct CreateUserResponse {
     pub user_id: String,
     pub user_name: String,
-    pub age: u8,
+    pub age: i16,
 }
 
 pub struct CreateUserUseCase<Repository: UsersRepository> {
@@ -29,7 +29,7 @@ impl<T: UsersRepository> CreateUserUseCase<T> {
         let user_id = UserId::default();
         let user_name = UserName::new(parameter.first_name, parameter.last_name);
         let user = User::new(user_id, user_name, parameter.age);
-        self.user_repository.save(&user);
+        self.user_repository.register(&user);
 
         CreateUserResponse {
             user_id: user.id.value.to_string(),
