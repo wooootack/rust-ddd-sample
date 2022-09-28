@@ -1,4 +1,4 @@
-use actix_web::{get, http::Error, post, web, HttpResponse, Responder};
+use actix_web::{delete, get, http::Error, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -14,9 +14,17 @@ use crate::{
     DbPool,
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 
 pub struct CreateUserRequest {
+    pub first_name: String,
+    pub last_name: String,
+    pub age: i16,
+}
+
+#[derive(Deserialize)]
+
+pub struct UpdateUserRequest {
     pub first_name: String,
     pub last_name: String,
     pub age: i16,
@@ -93,4 +101,21 @@ pub async fn create_user(
         },
         Err(e) => Ok(HttpResponse::InternalServerError().body(e.to_string())),
     }
+}
+
+#[post("/users/{user_id}")]
+pub async fn update_user(
+    pool: web::Data<DbPool>,
+    user_id: web::Path<String>,
+    request: web::Json<UpdateUserRequest>,
+) -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().json("updated user."))
+}
+
+#[delete("/users/{user_id}")]
+pub async fn delete_user(
+    pool: web::Data<DbPool>,
+    user_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().json("deleted user."))
 }
