@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: rust-ddd-example-postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./rust-ddd-example-postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rust-ddd-sample
+      TZ: "Asia/Tokyo"
+  postgres_test:
+    image: postgres:latest
+    container_name: rust-ddd-example-postgres-test
+    ports:
+      - 5433:5432
+    volumes:
+      - ./rust-ddd-example-postgres-test-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rust-ddd-sample
+      TZ: "Asia/Tokyo"
